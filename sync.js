@@ -5,20 +5,32 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 function getWeekNumber() {
-  const now = new Date();
-
-  const start = new Date(
-    now.getFullYear(),
-    0,
-    1
+  const nowGT = new Date(
+    new Date().toLocaleString('en-US', {
+      timeZone: 'America/Guatemala'
+    })
   );
 
-  const days = Math.floor(
-    (now - start) / (24 * 60 * 60 * 1000)
+  const d = new Date(
+    Date.UTC(
+      nowGT.getFullYear(),
+      nowGT.getMonth(),
+      nowGT.getDate()
+    )
+  );
+
+  const dayNum = d.getUTCDay() || 7;
+
+  d.setUTCDate(
+    d.getUTCDate() + 4 - dayNum
+  );
+
+  const yearStart = new Date(
+    Date.UTC(d.getUTCFullYear(), 0, 1)
   );
 
   return Math.ceil(
-    (days + start.getDay() + 1) / 7
+    (((d - yearStart) / 86400000) + 1) / 7
   );
 }
 
@@ -153,15 +165,15 @@ async function run() {
     'órdenes'
   );
 
-  await fetch(
-    `${SUPABASE_URL}/rest/v1/monday_orders`,
+   await fetch(
+    `${SUPABASE_URL}/rest/v1/monday_orders?orden=neq.___nunca___`,
     {
       method:'DELETE',
-
+  
       headers:{
         apikey: SUPABASE_KEY,
-        Authorization:
-          `Bearer ${SUPABASE_KEY}`
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Prefer: 'return=minimal'
       }
     }
   );
