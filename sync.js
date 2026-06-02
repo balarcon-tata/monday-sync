@@ -9,9 +9,13 @@ function getWeekNumber() {
     timeZone: 'America/Guatemala'
   }));
 
-  const d = new Date(Date.UTC(nowGT.getFullYear(), nowGT.getMonth(), nowGT.getDate()));
-  const dayNum = d.getUTCDay() || 7;
+  const d = new Date(Date.UTC(
+    nowGT.getFullYear(),
+    nowGT.getMonth(),
+    nowGT.getDate()
+  ));
 
+  const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
 
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -29,11 +33,16 @@ function norm(v) {
     .toUpperCase();
 }
 
-function getCol(cols, names) {
+function pick(raw, normalized, names) {
   for (const name of names) {
+    if (raw[name] !== undefined && raw[name] !== '') return raw[name];
+
     const key = norm(name);
-    if (cols[key] !== undefined && cols[key] !== '') return cols[key];
+    if (normalized[key] !== undefined && normalized[key] !== '') {
+      return normalized[key];
+    }
   }
+
   return '';
 }
 
@@ -46,20 +55,61 @@ function toDateOrNull(v) {
   if (!v) return null;
 
   const s = String(v).trim();
+
   if (!s || s === '-') return null;
 
-  const d = new Date(s);
-  if (!isNaN(d)) return d.toISOString().slice(0, 10);
+  const direct = new Date(s);
+  if (!isNaN(direct)) {
+    return direct.toISOString().slice(0, 10);
+  }
+
+  const months = {
+    ene: 0,
+    enero: 0,
+    feb: 1,
+    febrero: 1,
+    mar: 2,
+    marzo: 2,
+    abr: 3,
+    abril: 3,
+    may: 4,
+    mayo: 4,
+    jun: 5,
+    junio: 5,
+    jul: 6,
+    julio: 6,
+    ago: 7,
+    agosto: 7,
+    sep: 8,
+    sept: 8,
+    septiembre: 8,
+    oct: 9,
+    octubre: 9,
+    nov: 10,
+    noviembre: 10,
+    dic: 11,
+    diciembre: 11
+  };
+
+  const m = s.toLowerCase().match(/(\d{1,2})\s+([a-záéíóúñ]+)\.?/i);
+
+  if (m) {
+    const day = Number(m[1]);
+    const monthName = m[2]
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace('.', '')
+      .toLowerCase();
+
+    const month = months[monthName];
+
+    if (month !== undefined) {
+      const y = new Date().getFullYear();
+      return new Date(y, month, day).toISOString().slice(0, 10);
+    }
+  }
 
   return null;
-}
-
-function getMondayValue(c) {
-  return (
-    c.display_value ||
-    c.text ||
-    ''
-  ).trim();
 }
 
 async function run() {
@@ -86,14 +136,6 @@ async function run() {
               column_values {
                 id
                 text
-
-                ... on MirrorValue {
-                  display_value
-                }
-
-                ... on FormulaValue {
-                  display_value
-                }
               }
             }
           }
@@ -121,6 +163,7 @@ async function run() {
   const board = mondayData.data.boards[0];
 
   const columns = {};
+
   board.columns.forEach(col => {
     columns[col.id] = col.title;
   });
@@ -135,42 +178,53 @@ async function run() {
   }
 
   const rows = group.items_page.items.map(item => {
-    const cols = {};
+    const raw = {};
+    const normalized = {};
 
     item.column_values.forEach(c => {
       const title = columns[c.id] || c.id;
-      cols[norm(title)] = getMondayValue(c);
+      const value = c.text || '';
+
+      raw[title] = value;
+      normalized[norm(title)] = value;
     });
 
     return {
       orden: item.name,
 
-      cliente: getCol(cols, [
-        'Ejecutivo'
+      cliente: pick(raw, normalized, [
+        'Ejecutivo',
+        'EJECUTIVO'
       ]),
 
-      estilo: getCol(cols, [
-        'UNIR ESTILO COLOR'
+      estilo: pick(raw, normalized, [
+        'UNIR ESTILO COLOR',
+        'Unir Estilo Color',
+        'Estilo/color',
+        'Estilo Color'
       ]) || item.name,
 
-      tipo: getCol(cols, [
+      tipo: pick(raw, normalized, [
         'tipo/proyecto',
         'Tipo Proyecto'
       ]),
 
-      cantidad: toNumber(getCol(cols, [
+      cantidad: toNumber(pick(raw, normalized, [
         'Cantidad',
+        'Canti...',
         'Canti',
         'TOTAL'
       ])),
 
-      estado: getCol(cols, [
-        'ESTADO FABRICACION'
+      estado: pick(raw, normalized, [
+        'ESTADO FABRICACION',
+        'Estado Fabricacion'
       ]),
 
-      ex_date: toDateOrNull(getCol(cols, [
+      ex_date: toDateOrNull(pick(raw, normalized, [
         'Ex-date',
         'EX DATE',
+        'Ex Date',
         'DESPACHO'
       ])),
 
