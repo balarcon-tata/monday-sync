@@ -9,13 +9,9 @@ function getWeekNumber() {
     timeZone: 'America/Guatemala'
   }));
 
-  const d = new Date(Date.UTC(
-    nowGT.getFullYear(),
-    nowGT.getMonth(),
-    nowGT.getDate()
-  ));
-
+  const d = new Date(Date.UTC(nowGT.getFullYear(), nowGT.getMonth(), nowGT.getDate()));
   const dayNum = d.getUTCDay() || 7;
+
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
 
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -36,20 +32,8 @@ function norm(v) {
 function getCol(cols, names) {
   for (const name of names) {
     const key = norm(name);
-
-    if (cols[key] !== undefined && cols[key] !== '') {
-      return cols[key];
-    }
+    if (cols[key] !== undefined && cols[key] !== '') return cols[key];
   }
-
-  return '';
-}
-
-function extractMondayValue(c) {
-  if (c.text && String(c.text).trim() !== '') {
-    return c.text;
-  }
-
   return '';
 }
 
@@ -62,16 +46,20 @@ function toDateOrNull(v) {
   if (!v) return null;
 
   const s = String(v).trim();
-
   if (!s || s === '-') return null;
 
   const d = new Date(s);
-
-  if (!isNaN(d)) {
-    return d.toISOString().slice(0, 10);
-  }
+  if (!isNaN(d)) return d.toISOString().slice(0, 10);
 
   return null;
+}
+
+function getMondayValue(c) {
+  return (
+    c.display_value ||
+    c.text ||
+    ''
+  ).trim();
 }
 
 async function run() {
@@ -98,6 +86,14 @@ async function run() {
               column_values {
                 id
                 text
+
+                ... on MirrorValue {
+                  display_value
+                }
+
+                ... on FormulaValue {
+                  display_value
+                }
               }
             }
           }
@@ -125,12 +121,9 @@ async function run() {
   const board = mondayData.data.boards[0];
 
   const columns = {};
-
   board.columns.forEach(col => {
     columns[col.id] = col.title;
   });
-
-  console.log('Columnas detectadas:', columns);
 
   const group = board.groups.find(
     g => g.title.toUpperCase() === targetGroup.toUpperCase()
@@ -146,24 +139,18 @@ async function run() {
 
     item.column_values.forEach(c => {
       const title = columns[c.id] || c.id;
-      const value = extractMondayValue(c);
-
-      cols[norm(title)] = value;
+      cols[norm(title)] = getMondayValue(c);
     });
 
     return {
       orden: item.name,
 
       cliente: getCol(cols, [
-        'Ejecutivo',
-        'EJECUTIVO'
+        'Ejecutivo'
       ]),
 
       estilo: getCol(cols, [
-        'UNIR ESTILO COLOR',
-        'Unir Estilo Color',
-        'Estilo/color',
-        'Estilo Color'
+        'UNIR ESTILO COLOR'
       ]) || item.name,
 
       tipo: getCol(cols, [
@@ -173,20 +160,17 @@ async function run() {
 
       cantidad: toNumber(getCol(cols, [
         'Cantidad',
-        'Canti...',
-        'CANTI',
+        'Canti',
         'TOTAL'
       ])),
 
       estado: getCol(cols, [
-        'ESTADO FABRICACION',
-        'Estado Fabricacion'
+        'ESTADO FABRICACION'
       ]),
 
       ex_date: toDateOrNull(getCol(cols, [
         'Ex-date',
         'EX DATE',
-        'Ex Date',
         'DESPACHO'
       ])),
 
