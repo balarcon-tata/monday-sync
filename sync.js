@@ -45,6 +45,40 @@ function getCol(cols, names) {
   return '';
 }
 
+function extractMondayValue(c) {
+  if (c.text && String(c.text).trim() !== '') {
+    return c.text;
+  }
+
+  if (!c.value) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(c.value);
+
+    if (parsed.text) return parsed.text;
+    if (parsed.name) return parsed.name;
+    if (parsed.label) return parsed.label;
+    if (parsed.display_value) return parsed.display_value;
+
+    if (Array.isArray(parsed.personsAndTeams)) {
+      return parsed.personsAndTeams
+        .map(p => p.name || p.text || p.id || '')
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    if (Array.isArray(parsed.changed_at)) {
+      return parsed.changed_at.join(', ');
+    }
+
+    return '';
+  } catch (e) {
+    return '';
+  }
+}
+
 function toNumber(v) {
   const n = Number(String(v || '').replace(/,/g, '').trim());
   return Number.isFinite(n) ? n : 0;
@@ -90,6 +124,7 @@ async function run() {
               column_values {
                 id
                 text
+                value
               }
             }
           }
@@ -138,7 +173,9 @@ async function run() {
 
     item.column_values.forEach(c => {
       const title = columns[c.id] || c.id;
-      cols[norm(title)] = c.text || '';
+      const value = extractMondayValue(c);
+
+      cols[norm(title)] = value;
     });
 
     return {
