@@ -36,10 +36,12 @@ function norm(v) {
 function getCol(cols, names) {
   for (const name of names) {
     const key = norm(name);
+
     if (cols[key] !== undefined && cols[key] !== '') {
       return cols[key];
     }
   }
+
   return '';
 }
 
@@ -52,9 +54,11 @@ function toDateOrNull(v) {
   if (!v) return null;
 
   const s = String(v).trim();
+
   if (!s || s === '-') return null;
 
   const d = new Date(s);
+
   if (!isNaN(d)) {
     return d.toISOString().slice(0, 10);
   }
@@ -113,6 +117,7 @@ async function run() {
   const board = mondayData.data.boards[0];
 
   const columns = {};
+
   board.columns.forEach(col => {
     columns[col.id] = col.title;
   });
@@ -140,13 +145,15 @@ async function run() {
       orden: item.name,
 
       cliente: getCol(cols, [
-        'Ejecutivo'
+        'Ejecutivo',
+        'EJECUTIVO'
       ]),
 
       estilo: getCol(cols, [
+        'UNIR ESTILO COLOR',
+        'Unir Estilo Color',
         'Estilo/color',
-        'Estilo Color',
-        'Name'
+        'Estilo Color'
       ]) || item.name,
 
       tipo: getCol(cols, [
