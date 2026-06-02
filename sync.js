@@ -50,33 +50,7 @@ function extractMondayValue(c) {
     return c.text;
   }
 
-  if (!c.value) {
-    return '';
-  }
-
-  try {
-    const parsed = JSON.parse(c.value);
-
-    if (parsed.text) return parsed.text;
-    if (parsed.name) return parsed.name;
-    if (parsed.label) return parsed.label;
-    if (parsed.display_value) return parsed.display_value;
-
-    if (Array.isArray(parsed.personsAndTeams)) {
-      return parsed.personsAndTeams
-        .map(p => p.name || p.text || p.id || '')
-        .filter(Boolean)
-        .join(', ');
-    }
-
-    if (Array.isArray(parsed.changed_at)) {
-      return parsed.changed_at.join(', ');
-    }
-
-    return '';
-  } catch (e) {
-    return '';
-  }
+  return '';
 }
 
 function toNumber(v) {
@@ -124,7 +98,6 @@ async function run() {
               column_values {
                 id
                 text
-                value
               }
             }
           }
