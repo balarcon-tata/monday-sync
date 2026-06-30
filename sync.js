@@ -167,6 +167,7 @@ async function run() {
   board.columns.forEach(col => {
     columns[col.id] = col.title;
   });
+  console.log(JSON.stringify(columns, null, 2));
 
   const group = board.groups.find(
     g => g.title.toUpperCase() === targetGroup.toUpperCase()
