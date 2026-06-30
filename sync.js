@@ -131,6 +131,7 @@ async function run() {
 
           items_page(limit:500) {
             items {
+              id
               name
 
               column_values {
@@ -193,6 +194,7 @@ async function run() {
     });
 
     return {
+      item_id: item.id,
       orden: item.name,
 
       cliente: pick(raw, normalized, [
