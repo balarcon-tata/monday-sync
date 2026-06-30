@@ -168,6 +168,8 @@ async function run() {
     columns[col.id] = col.title;
   });
   console.log(JSON.stringify(columns, null, 2));
+  console.log("COLUMNAS MONDAY:");
+  console.log(columns);
 
   const group = board.groups.find(
     g => g.title.toUpperCase() === targetGroup.toUpperCase()
